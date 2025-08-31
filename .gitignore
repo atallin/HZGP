@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# VS Code settings
+.vscode/
+
+# Environment files
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python egg files
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Excel and data output
+*.xlsx
+*.xls
+*.csv
+
+# Logs and databases
+
+*.log
+*.sqlite3
+*.db
+*.db-journal
+# test code
+Junk*.py
+# private code files
+minimumVc_private.py
