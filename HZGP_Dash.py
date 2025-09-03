@@ -12,6 +12,7 @@ import base64
 from minimumVc import options, default_option
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 tab_geometry_content= html.Div([ 
     html.Table([
         html.Tr([
@@ -321,5 +322,6 @@ def update_outputbox(curves, graphitem):
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)
+
 
 
