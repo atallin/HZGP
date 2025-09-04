@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import math
 from scipy.optimize import fsolve
-from minimumVc_private import mintransportvelocity
+from minimumVc import mintransportvelocity
 
 def reynolds(**kwarg):
     '''
