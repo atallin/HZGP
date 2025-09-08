@@ -10,6 +10,7 @@ import plotly.express as px
 import io
 import base64
 from minimumVc import options, default_option
+#from minimumVc_private import options, default_option
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 tab_geometry_content= html.Div([ 
@@ -57,6 +58,16 @@ tab_slurry_content= html.Div([
             html.Td('Fluid Viscosity(cP):', style={'textAlign': 'right'}),
             html.Td(dcc.Input(id='Mu_f', type='number', value=1.0, style={'marginTop': '10px'}))
         ]),
+        html.Tr([
+            html.Td('DR channel 0-1:', style={'textAlign': 'right'}),
+            html.Td(dcc.Input(id='drag_r_o', type='number', value=0, min=0, max=1, step=0.01, 
+                              style={'marginTop': '10px'}))
+        ]),
+        html.Tr([
+            html.Td('DR wash-pipe annulus 0-1:', style={'textAlign': 'right'}),
+            html.Td(dcc.Input(id='drag_r_w', type='number', value=0, min=0, max=1, step=0.01, 
+                              style={'marginTop': '10px'}))
+        ]),        
         html.Tr([
             html.Td('Gravel size(um):', style={'textAlign': 'right'}),
             html.Td(dcc.Input(id='D_p', type='number', value=650, style={'marginTop': '10px'}))
@@ -132,17 +143,25 @@ app.layout = html.Div(
 )
 
 def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,e_oh,e_wp,
-                     rho_f,mu_f,d_p,sg,ppa,vc, model):
+                     rho_f,mu_f,d_p,sg,ppa,vc, dro, drw, model):
     # Create a curve for transport rate vs height
     # This function is called to generate the curve data    
     hs = np.arange(start=oh*0.60, stop=oh*0.95,step=oh*0.35/60)
     qs = [transportrate(model=model, 
-                        oh=oh,ds_o=screen_od,
-                        ds_c=screen_cd,ds_i=screen_id,dw_o=washp_od,
+                        oh=oh,
+                        ds_o=screen_od,
+                        ds_c=screen_cd,
+                        ds_i=screen_id,
+                        dw_o=washp_od,
                         h=h,
-                        ppa=ppa,dp=d_p/25400, 
-                        rhof=rho_f,SG=sg,muf=mu_f, vc = vc, 
-                        e_o=e_oh, e_w=e_wp) 
+                        ppa=ppa,
+                        dp=d_p/25400, 
+                        rhof=rho_f,
+                        SG=sg,
+                        muf=mu_f,
+                        vc = vc, 
+                        e_o=e_oh, 
+                        e_w=e_wp,dr_o=dro, dr_w=drw) 
                         for h in hs]
     qvsh = pd.DataFrame(data = {'h':hs, 'q': [q[0] for q in qs], 'dpdx': [q[1] for q in qs]})
     qmax = qs[0][0]
@@ -171,6 +190,8 @@ def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,e_oh,e_wp,
         'mu_f': mu_f,
         'd_p': d_p,
         'sg': sg,
+        'dr_o': dro,
+        'dr_w': drw,
         'ppa': ppa,
         'model': model,
         'name': f'{model}/{ppa:.2f}'
@@ -190,6 +211,8 @@ def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,e_oh,e_wp,
     State('E_WP', 'value'),
     State('Rho_f', 'value'),
     State('Mu_f', 'value'),
+    State('drag_r_o', 'value'),
+    State('drag_r_w', 'value'),
     State('D_p', 'value'),
     State('SG', 'value'),
     State('ppa', 'value'),
@@ -200,13 +223,13 @@ def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,e_oh,e_wp,
     Input('clear-button', 'n_clicks')
 )
 def callbackinputbox(oh,screen_od,screen_id,screen_cd,washp_od,e_oh,e_wp,
-                     rho_f,mu_f,d_p,sg,ppa,vc, model, curvedata, n_clicks_run, n_clicks_clear):
+                     rho_f, mu_f, dro, drw, d_p, sg, ppa,vc, model, curvedata, n_clicks_run, n_clicks_clear):
     ctx = dash.callback_context
     if ctx.triggered:
         if 'clear-button' == ctx.triggered[0]['prop_id'].split('.')[0]:
             curvedata = None
     curve = createcurve(oh, screen_od, screen_id, screen_cd, washp_od, e_oh, e_wp,
-                   rho_f, mu_f, d_p, sg, ppa, vc, model)
+                   rho_f, mu_f, d_p, sg, ppa, vc, dro, drw, model)
     if curvedata == None:        
         return [curve], 'graph-tab'
     else:
