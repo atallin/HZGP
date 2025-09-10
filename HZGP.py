@@ -4,7 +4,7 @@ import pandas as pd
 import math
 from scipy.optimize import fsolve
 from minimumVc import mintransportvelocity
-
+# from minimumVc_private import mintransportvelocity
 def reynolds(**kwarg):
     '''
     d, d_h, d_o, d_i: dimensions in inches
@@ -67,6 +67,32 @@ def friction_factor(Re, e_D, tol= 1e-6):
     if Re >= 4000:
         return f
     return np.exp(np.log(f_lam)+(np.log(f/f_lam))*(np.log(Re/2000))/np.log(Re0/2000))
+
+def friction_factor_dr(Re, e_D = 0, dr = 0, tol= 1e-6):
+    if Re <=2000:
+        return 64/Re
+    f_guess = 0.02  # Initial guess for friction factor
+    if Re <= 4000:
+        Re0 = 4000
+        f_lam = 64/Re
+    else:
+        Re0 = Re
+    while True:
+        f_dr = 4*((19*np.log10(Re0*np.sqrt(f_guess/4))-32.4)**(-2)) # Rearranged equation
+        if abs(f_dr - f_guess) < tol:  # Convergence check
+            break
+        f_guess = f_dr
+    f_guess = 0.02
+    while True:
+        f_d = (-2 * np.log10((e_D / 3.7) + (2.51 / (Re0 * np.sqrt(f_guess)))))**(-2) # Rearranged equation
+        if abs(f_d - f_guess) < tol:  # Convergence check
+            break
+        f_guess = f_d
+    f = f_d+dr*(f_dr - f_d)
+    if Re >= 4000:
+        return f
+    return np.exp(np.log(f_lam)+(np.log(f/f_lam))*(np.log(Re/2000))/np.log(Re0/2000))
+
 
 def area(d_o, d_i=None, d_c=None, h=None):
     r0 = d_o/2
@@ -184,7 +210,7 @@ def checkdiameters(**kwarg):
         h_good = True
     return all([d_i_good,d_c_good, h_good])
 
-def pressuregradient(**kwarg):
+def pressuregradient(dr = 0, **kwarg):
     options = {'option1': ['Re', 'q', 'd_h', 'a', 'rho','e'],
                'option2': ['Re', 'v', 'd_h', 'rho','e'],
                'option3': ['d_o','d_i','d_c','h', 'rho', 'mu', 'q','e'],
@@ -254,7 +280,15 @@ def pressuregradient(**kwarg):
         v = 0.32083333333 * q / a
         Re = reynolds(d = d_h, mu = mu, rho = rho, v = v)
         eD = e/d_h
-    ff = friction_factor(Re, eD)
+    elif opt == 'option6':
+        if not checkdiameters(d_o = d_o):
+            return np.nan
+        d_h = d_o
+        a = area(d_o = d_o)
+        v = 0.32083333333 * q / a
+        Re = reynolds(d = d_h, mu = mu, rho = rho, v = v)
+        eD = e/d_h
+    ff= friction_factor_dr(Re, eD, dr)
     dpdx = 0.019375138 * ff * (rho*v**2/2) /d_h
     return dpdx
 
@@ -295,7 +329,7 @@ def eccentricity_factor(ec, dd):
 
     return max(ef1, ef2)
 
-def transportrate(model, oh, ds_o, ds_i, ds_c, dw_o, h, ppa, dp, rhof, vc, SG, muf, e_o, e_w ):
+def transportrate(model, oh, ds_o, ds_i, ds_c, dw_o, dw_i, h, ppa, dp, rhof, vc, SG, muf, e_o, e_w, dr_o=0, dr_w=0):
     a = area(d_o=oh, d_i=ds_o, d_c=ds_c, h=h)
     bP = bed_Per(d_o=oh,d_i=ds_o,d_c=ds_c,h=h)
     w_eccentricity_factor = eccentricity_factor(ec=1,dd= dw_o/ds_i)
@@ -309,19 +343,21 @@ def transportrate(model, oh, ds_o, ds_i, ds_c, dw_o, h, ppa, dp, rhof, vc, SG, m
             Vc = mintransportvelocity(model=model, C=C1, rho = rhof, DA=DA, bP = bP, SG=SG, dp = dp, mu = muf, vc = vc)
             Qo = 3.1168831 * Vc * a
             rho1 = SG*8.3454045*C1 + (1-C1)*rhof
-            dpdx1 = pressuregradient(d_o=oh,d_i=ds_o,d_c=ds_c,h = h, rho = rho1, mu=muf, q=Qo, e=e_o)
+            dpdx1 = pressuregradient(dr=dr_o, d_o=oh,d_i=ds_o,d_c=ds_c,h = h, rho = rho1, mu=muf, q=Qo, e=e_o)
             aw = area(d_o=ds_i,d_i=dw_o)
             def _washpipegrad(q):
-                return (dpdx1 - 1.0*w_eccentricity_factor*pressuregradient(d_o=ds_i,d_i=dw_o,q=q, rho=rhof, mu = muf, e = e_w))
+                return (dpdx1 - w_eccentricity_factor*pressuregradient(dr=dr_w, d_o=ds_i,d_i=dw_o,q=q, rho=rhof, mu = muf, e = e_w))
             Qw = fsolve(_washpipegrad, Qo)[0]
             C2 = C1 * Qo / (Qo+Qw)
             C1 = (C * (Qo+Qw) / Qo + C1)/2
             if C1 > 0.25:
-                return np.nan, np.nan
+                return np.nan, np.nan, np.nan, np.nan
             i-=1
         ppa1 = C2*SG*8.3454045/(1-C2)
-        return Qw+Qo, dpdx1
+        dpdx_w = pressuregradient(dr=dr_w, d_o=ds_i,d_i=dw_o,q=Qw+Qo, rho=rhof, mu = muf, e = e_w)
+        dpdx_wi = pressuregradient(dr=dr_w, d_o=dw_i,q=Qw+Qo, rho=rhof, mu = muf, e = e_w)
+        return Qw+Qo, dpdx1, dpdx_w, dpdx_wi
     except Exception as e:
-        return np.nan, np.nan
+        return np.nan, np.nan, np.nan, np.nan
 
 # %%
