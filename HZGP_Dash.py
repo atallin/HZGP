@@ -139,7 +139,8 @@ tab_resutls_content = html.Div([
                     html.Td(dcc.RadioItems(id='graph-item',
                                     options={ 'height':'rate-height',
                                             'dpdx':'rate-dp/dx alpha',
-                                            'dpdx_w':'rate-dpdx beta'}, 
+                                            'dpdx_w':'rate-dpdx beta',
+                                            'dp/dx_wi':'rate-dp/dx washpipe id'}, 
                                             value='height', inline=True, 
                                     labelStyle={'marginRight': '20px', 'marginLeft': '20px'},
                                     inputStyle={'marginRight': '10px'}),
@@ -194,7 +195,11 @@ def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,washp_id,e_oh,e_wp,
                         e_o=e_oh, 
                         e_w=e_wp,dr_o=dro, dr_w=drw) 
                         for h in hs]
-    qvsh = pd.DataFrame(data = {'h':hs, 'q': [q[0] for q in qs], 'dpdx': [q[1] for q in qs], 'dpdx_w': [q[2] for q in qs]})
+    qvsh = pd.DataFrame(data = {'h':hs,
+                                'q': [q[0] for q in qs], 
+                                'dpdx': [q[1] for q in qs], 
+                                'dpdx_w': [q[2] for q in qs],
+                                'dpdx_wi': [q[3] for q in qs]})
     qmax = qs[0][0]
     qvsh = qvsh[[q <= qmax and pd.notna(q) for q in qvsh.q.values]]
     hmax = qvsh[qvsh.q.min()==qvsh.q].h.values[0]
@@ -205,6 +210,7 @@ def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,washp_id,e_oh,e_wp,
         'q': qvsh[showvalues1].q.tolist(),
         'dpdx': qvsh[showvalues1].dpdx.tolist(),
         'dpdx_w': qvsh[showvalues1].dpdx_w.tolist(),
+        'dpdx_wi': qvsh[showvalues1].dpdx_wi.tolist(),
         'h_' :qvsh[showvalues2].h.tolist(),
         'q_' :qvsh[showvalues2].q.tolist(),
         'dpdx_': qvsh[showvalues2].dpdx.tolist(),
@@ -292,7 +298,8 @@ def generate_excel(n_clicks, curvename, curves):
             'Q (gal/min)': curve['q'],
             'h (inches)': curve['h'],
             'dp/dx-alpha (psi/ft)': curve['dpdx'],
-            'dp/dx-beta (psi/ft)': curve['dpdx_w']   
+            'dp/dx-beta (psi/ft)': curve['dpdx_w'],
+            'dp/dx-washpipe id (psi/ft)': curve['dpdx_wi']   
         })
         df_curve.to_excel(writer, sheet_name='Curve Data', index=False)
         
@@ -372,6 +379,15 @@ def update_outputbox(curves, graphitem, unititem):
                             showlegend=False, legendgroup=curve['name'])
             fig.add_traces([t1,t3])
             Fig_title = 'Rate vs Beta Pressure Gradient'
+        elif graphitem == 'dp/dx_wi':
+            t1 = go.Scatter(x=curve['q'], y=curve['dpdx_wi'], type='scatter', mode='lines', name=curve['name'], 
+                            line=dict(color=colors[color_i]), 
+                            legendgroup=curve['name'])            
+            t3 = go.Scatter(x=[curve['qmin']], y=[curve['dpdx_wi'][curve['h'].index(curve['hmax'])]], mode='markers', 
+                            marker=dict(color=colors[color_i], size=10, symbol='circle'), name=f"{curve['name']} Qmin",
+                            showlegend=False, legendgroup=curve['name'])
+            fig.add_traces([t1,t3])
+            Fig_title = 'Rate vs Washpipe ID Pressure Gradient'
         else:
             t1 = go.Scatter(x=curve['q'], y=curve['h'], type='scatter', mode='lines', name=curve['name'] , 
                             line=dict(color=colors[color_i]), 
@@ -405,6 +421,9 @@ def update_outputbox(curves, graphitem, unititem):
     elif graphitem == 'dpdx_w':
         fig.update_layout(yaxis_title='dp/dx-beta (psi/ft)')
         fig.update_yaxes(range=[0, 1.2*max([max(c['dpdx_w'])for c in curves])]) 
+    elif graphitem == 'dp/dx_wi':
+        fig.update_layout(yaxis_title='dp/dx-washpipe id (psi/ft)')
+        fig.update_yaxes(range=[0, 1.2*max([max(c['dpdx_wi'])for c in curves])])
     else:
         fig.update_yaxes(range=[0.3*min([c['oh'] for c in curves]), max([c['oh'] for c in curves])])
 
