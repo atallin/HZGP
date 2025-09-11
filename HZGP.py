@@ -354,7 +354,7 @@ def transportrate(model, oh, ds_o, ds_i, ds_c, dw_o, dw_i, h, ppa, dp, rhof, vc,
                 return np.nan, np.nan, np.nan, np.nan
             i-=1
         ppa1 = C2*SG*8.3454045/(1-C2)
-        dpdx_w = pressuregradient(dr=dr_w, d_o=ds_i,d_i=dw_o,q=Qw+Qo, rho=rhof, mu = muf, e = e_w)
+        dpdx_w = w_eccentricity_factor*pressuregradient(dr=dr_w, d_o=ds_i,d_i=dw_o,q=Qw+Qo, rho=rhof, mu = muf, e = e_w)
         dpdx_wi = pressuregradient(dr=dr_w, d_o=dw_i,q=Qw+Qo, rho=rhof, mu = muf, e = e_w)
         return Qw+Qo, dpdx1, dpdx_w, dpdx_wi
     except Exception as e:
