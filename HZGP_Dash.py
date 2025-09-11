@@ -339,13 +339,7 @@ def update_outputbox(curves, graphitem, unititem):
         return html.Div("No curves to display. Please input parameters and click 'Run'."), html.Div(), []
     colors= px.colors.qualitative.Plotly
     cellstyle = {'border': '1px solid black', 'padding': '5px', 'textAlign': 'center'}
-    tablerows = [html.Tr([
-        html.Th('Curve Name', style=cellstyle),
-        html.Th('Qmin (gal/min)', style=cellstyle),
-        html.Th('hmax (inches)', style=cellstyle),
-        html.Th('Conc. (ppa)', style=cellstyle),
-        html.Th('Model' , style=cellstyle)
-    ])]
+
     color_i = 0
     if unititem == 'bpm':
         for curve in curves:
@@ -354,9 +348,17 @@ def update_outputbox(curves, graphitem, unititem):
             curve['qmin'] = curve['qmin']/42
             curve['qmax'] = curve['qmax']/42
         x_axis_title = 'Slurry Rate (bbl/min)'
+        col_q_title = 'Qmin (bbl/min)'
     else:
         x_axis_title = 'Slurry Rate (gal/min)'
-
+        col_q_title = 'Qmin (gal/min)'
+    tablerows = [html.Tr([
+        html.Th('Curve Name', style=cellstyle),
+        html.Th(col_q_title, style=cellstyle),
+        html.Th('hmax (inches)', style=cellstyle),
+        html.Th('Conc. (ppa)', style=cellstyle),
+        html.Th('Model' , style=cellstyle)
+    ])]
     for curve in curves:
         if graphitem == 'dpdx':
             t1 = go.Scatter(x=curve['q'], y=curve['dpdx'], type='scatter', mode='lines', name=curve['name'], 
