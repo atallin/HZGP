@@ -329,7 +329,7 @@ def eccentricity_factor(ec, dd):
 
     return max(ef1, ef2)
 
-def transportrate(model, oh, ds_o, ds_i, ds_c, dw_o, dw_i, h, ppa, dp, rhof, vc, SG, muf, e_o, e_w, dr_o=0, dr_w=0):
+def transportrate(model, oh, ds_o, ds_i, ds_c, dw_o, dw_i, h, ppa, dp, rhof, vc, SG, muf, e_o, e_w, dr_o=0, dr_w=0, dr_wi=0):
     a = area(d_o=oh, d_i=ds_o, d_c=ds_c, h=h)
     bP = bed_Per(d_o=oh,d_i=ds_o,d_c=ds_c,h=h)
     w_eccentricity_factor = eccentricity_factor(ec=1,dd= dw_o/ds_i)
@@ -355,7 +355,7 @@ def transportrate(model, oh, ds_o, ds_i, ds_c, dw_o, dw_i, h, ppa, dp, rhof, vc,
             i-=1
         ppa1 = C2*SG*8.3454045/(1-C2)
         dpdx_w = w_eccentricity_factor*pressuregradient(dr=dr_w, d_o=ds_i,d_i=dw_o,q=Qw+Qo, rho=rhof, mu = muf, e = e_w)
-        dpdx_wi = pressuregradient(dr=dr_w, d_o=dw_i,q=Qw+Qo, rho=rhof, mu = muf, e = e_w)
+        dpdx_wi = pressuregradient(dr=dr_wi, d_o=dw_i,q=Qw+Qo, rho=rhof, mu = muf, e = e_w)
         return Qw+Qo, dpdx1, dpdx_w, dpdx_wi
     except Exception as e:
         return np.nan, np.nan, np.nan, np.nan

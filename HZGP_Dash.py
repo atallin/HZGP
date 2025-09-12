@@ -73,6 +73,11 @@ tab_slurry_content= html.Div([
             html.Td('DR wash-pipe annulus 0-1:', style={'textAlign': 'right'}),
             html.Td(dcc.Input(id='drag_r_w', type='number', value=0, min=0, max=1, step=0.01, 
                               style={'marginTop': '10px'}))
+        ]), 
+        html.Tr([
+            html.Td('DR wash-pipe ID 0-1:', style={'textAlign': 'right'}),
+            html.Td(dcc.Input(id='drag_r_wi', type='number', value=0, min=0, max=1, step=0.01, 
+                              style={'marginTop': '10px'}))
         ]),        
         html.Tr([
             html.Td('Gravel size(um):', style={'textAlign': 'right'}),
@@ -174,7 +179,7 @@ app.layout = html.Div(
 )
 
 def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,washp_id,e_oh,e_wp,
-                     rho_f,mu_f,d_p,sg,ppa,vc, dro, drw, model, name):
+                     rho_f,mu_f,d_p,sg,ppa,vc, dro, drw, drwi, model, name):
     # Create a curve for transport rate vs height
     # This function is called to generate the curve data    
     hs = np.arange(start=oh*0.60, stop=oh*0.95,step=oh*0.35/60)
@@ -193,7 +198,10 @@ def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,washp_id,e_oh,e_wp,
                         muf=mu_f,
                         vc = vc, 
                         e_o=e_oh, 
-                        e_w=e_wp,dr_o=dro, dr_w=drw) 
+                        e_w=e_wp,
+                        dr_o=dro, 
+                        dr_w=drw,
+                        dr_wi=drwi) 
                         for h in hs]
     qvsh = pd.DataFrame(data = {'h':hs,
                                 'q': [q[0] for q in qs], 
@@ -222,6 +230,7 @@ def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,washp_id,e_oh,e_wp,
         'screen_id':screen_id,
         'screen_cd':screen_cd,
         'washp_od':washp_od,
+        'washp_id':washp_id,
         'e_oh':e_oh,
         'e_wp': e_wp,
         'rho_f': rho_f,
@@ -230,6 +239,7 @@ def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,washp_id,e_oh,e_wp,
         'sg': sg,
         'dr_o': dro,
         'dr_w': drw,
+        'dr_wi': drwi,
         'ppa': ppa,
         'model': model,
         'name': f'{model}/{ppa:.2f}' if name is None or name == '' else name
@@ -252,6 +262,7 @@ def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,washp_id,e_oh,e_wp,
     State('Mu_f', 'value'),
     State('drag_r_o', 'value'),
     State('drag_r_w', 'value'),
+    State('drag_r_wi', 'value'),
     State('D_p', 'value'),
     State('SG', 'value'),
     State('ppa', 'value'),
@@ -263,13 +274,13 @@ def createcurve(oh,screen_od,screen_id,screen_cd,washp_od,washp_id,e_oh,e_wp,
     Input('clear-button', 'n_clicks')
 )
 def callbackinputbox(oh,screen_od,screen_id,screen_cd,washp_od,washp_id,e_oh,e_wp,
-                     rho_f, mu_f, dro, drw, d_p, sg, ppa,vc, model, name, curvedata, n_clicks_run, n_clicks_clear):
+                     rho_f, mu_f, dro, drw, drwi, d_p, sg, ppa,vc, model, name, curvedata, n_clicks_run, n_clicks_clear):
     ctx = dash.callback_context
     if ctx.triggered:
         if 'clear-button' == ctx.triggered[0]['prop_id'].split('.')[0]:
             curvedata = None
     curve = createcurve(oh, screen_od, screen_id, screen_cd, washp_od, washp_id, e_oh, e_wp,
-                   rho_f, mu_f, d_p, sg, ppa, vc, dro, drw, model, name)
+                   rho_f, mu_f, d_p, sg, ppa, vc, dro, drw, drwi, model, name)
     if curvedata == None:        
         return [curve], 'graph-tab'
     else:
@@ -306,17 +317,18 @@ def generate_excel(n_clicks, curvename, curves):
         # Write parameters to another sheet
         df_params = pd.DataFrame({
             'Parameter': ['Openhole (in)', 'Screen OD (in)', 'Screen ID (in)', 'Screen Centralizer (in)', 
-                          'Washpipe OD (in)', 'OH roughness (in)', 'Washpipe-screen roughness (in)', 
+                          'Washpipe OD (in)', 'Washpipe ID', 'OH roughness (in)', 'Washpipe-screen roughness (in)', 
                           'Fluid density (ppg)', 'Fluid Viscosity (cP)',
                           'Drag reduction channel:', 
                           'Drag reduction wash-pipe annulus:',
+                          'Drag reduction wash-pipe ID:',
                           'Gravel size (um)', 
                           'Gravel density (sg)', 'Slurry conc. (ppa)', 'Minimum transport slurry rate (gpm)',
                           'Maximum bed height (in)', 'Deposition model'],
             'Value': [curve['oh'], curve['screen_od'], curve['screen_id'], curve['screen_cd'], 
-                      curve['washp_od'], curve['e_oh'], curve['e_wp'], 
+                      curve['washp_od'], curve['washp_id'], curve['e_oh'], curve['e_wp'], 
                       curve['rho_f'], curve['mu_f'], 
-                      curve['dr_o'], curve['dr_w'],
+                      curve['dr_o'], curve['dr_w'], curve['dr_wi'],
                       curve['d_p'], 
                       curve['sg'], curve['ppa'], curve['qmin'], curve['hmax'],
                       curve['model']]
@@ -433,6 +445,6 @@ def update_outputbox(curves, graphitem, unititem):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8050)
+    app.run(debug=False, port=8050)
 
 
