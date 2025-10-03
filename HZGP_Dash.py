@@ -20,37 +20,37 @@ tab_geometry_content= html.Div([
         html.Tr([
             # html.Label('Openhole:', style={'marginRight': '10px', 'marginTop': '10px','textAlign': 'right'}
             html.Td('Openhole(in):', style={'textAlign': 'right'}),
-            html.Td(dcc.Input(id='OH', type='number', value=8.5, style={'marginTop': '10px'}))
+            html.Td(dcc.Input(id='OH', type='number', value=8.5, step=0.05, style={'marginTop': '10px'}))
         ]),
         html.Tr([
             html.Td('Screen OD(in):',style={'textAlign': 'right'}),
-            html.Td(dcc.Input(id='ScreenOD', type='number', value=6.125, style={'marginTop': '10px'}))
+            html.Td(dcc.Input(id='ScreenOD', type='number', value=6.125, step=0.001, style={'marginTop': '10px'}))
         ]),
         html.Tr([
             html.Td('Screen ID(in):',style={'textAlign': 'right'}),
-            html.Td(dcc.Input(id='ScreenID', type='number', value=4.545, style={'marginTop': '10px'}))
+            html.Td(dcc.Input(id='ScreenID', type='number', value=4.545, step=0.001, style={'marginTop': '10px'}))
         ]), 
 
         html.Tr([
             html.Td('Screen Centralizer(in):',style={'textAlign': 'right'}),
-            html.Td(dcc.Input(id='ScreenCD', type='number', value=6.75,  style={'marginTop': '10px'}))
+            html.Td(dcc.Input(id='ScreenCD', type='number', value=6.75, step=0.001,  style={'marginTop': '10px'}))
         ]),
         html.Tr([
             html.Td('Washpipe OD(in):',style={'textAlign': 'right'}),
-            html.Td(dcc.Input(id='WashPipeOD', type='number', value=4.0, style={'marginTop': '10px'}))
+            html.Td(dcc.Input(id='WashPipeOD', type='number', value=4.0, step=0.001, style={'marginTop': '10px'}))
         ]),
         html.Tr([
             html.Td('Washpipe ID(in):',style={'textAlign': 'right'}),
-            html.Td(dcc.Input(id='WashPipeID', type='number', value=3.8, style={'marginTop': '10px'}))
+            html.Td(dcc.Input(id='WashPipeID', type='number', value=3.8, step=0.001, style={'marginTop': '10px'}))
         ]),
         html.Tr([
             html.Td('OH roughness(in):',style={'paddingLeft': '40px', 'marginTop': '10px','textAlign': 'right'}),
-            html.Td(dcc.Input(id='E_OH', type='number', value=0.05, style={'marginTop': '10px'}))
+            html.Td(dcc.Input(id='E_OH', type='number', value=0.05, step= 0.001, style={'marginTop': '10px'}))
         ]),
 
         html.Tr([
             html.Td('Washpipe-screen roughness(in):',style={'textAlign': 'right'}),
-            html.Td(dcc.Input(id='E_WP', type='number', value=0.005, style={'marginTop': '10px'}))
+            html.Td(dcc.Input(id='E_WP', type='number', value=0.005, step=0.0001, style={'marginTop': '10px'}))
         ])
     ], style={'borderCollapse': 'separate', 'borderSpacing': '10px 5px'})
 ]) 
@@ -62,7 +62,7 @@ tab_slurry_content= html.Div([
         ]),
         html.Tr([
             html.Td('Fluid Viscosity(cP):', style={'textAlign': 'right'}),
-            html.Td(dcc.Input(id='Mu_f', type='number', value=1.0, style={'marginTop': '10px'}))
+            html.Td(dcc.Input(id='Mu_f', type='number', value=1.0, step=0.1, style={'marginTop': '10px'}))
         ]),
         html.Tr([
             html.Td('DR channel 0-1:', style={'textAlign': 'right'}),
@@ -85,7 +85,7 @@ tab_slurry_content= html.Div([
         ]),
         html.Tr([
             html.Td('Gravel density(sg):', style={'textAlign': 'right'}),
-            html.Td(dcc.Input(id='SG', type='number', value=2.65, style={'marginTop': '10px'}))
+            html.Td(dcc.Input(id='SG', type='number', min=0, value=2.65, step=0.01, style={'marginTop': '10px'}))
         ]),
         html.Tr([
             html.Td('Slurry conc.(ppa):', style={'textAlign': 'right'}),
@@ -424,27 +424,55 @@ def update_outputbox(curves, graphitem, unititem):
             html.Td(curve['model'], style=cellstyle)
         ]))
     options = [dict(value=curve['name'], label=curve['name']) for curve in curves]
-    fig.update_layout(title=Fig_title,
-                      xaxis_title=x_axis_title,
-                      yaxis_title='Bed Height (inches)',
-                      xaxis=dict(range=[0, 1.2 * max([c['qmax'] for c in curves])]),
-                      width=800, height=600)
+    # fig.update_layout(title=Fig_title,
+    #                   plot_bgcolor='white',
+    #                   xaxis_title=x_axis_title,
+    #                 #   yaxis_title='Bed Height (inches)',
+    #                   yaxis_tickfont=dict(size=16),
+    #                   xaxis_tickfont=dict(size=16),
+    #                   yaxis_title_font=dict(size=20),
+    #                   xaxis_title_font=dict(size=20),
+    #                   xaxis=dict(range=[0, 1.2 * max([c['qmax'] for c in curves])]),
+    #                   width=800, height=600)
     if graphitem == 'dpdx':
-        fig.update_layout(yaxis_title='dp/dx-alpha (psi/ft)')
-        fig.update_yaxes(range=[0, 1.2*max([max(c['dpdx'])for c in curves])])
+        # fig.update_layout(yaxis_title='dp/dx-alpha (psi/ft)')
+        # fig.update_yaxes(range=[0, 1.2*max([max(c['dpdx'])for c in curves])], title='dp/dx-alpha (psi/ft)')
+        # fig.update_layout(yaxis_range=[0, 1.2*max([max(c['dpdx'])for c in curves])], yaxis_title='dp/dx-alpha (psi/ft)')
+        yrange = [0, 1.2*max([max(c['dpdx'])for c in curves])]
+        ytitle= 'dp/dx-alpha (psi/ft)'
     elif graphitem == 'dpdx_w':
-        fig.update_layout(yaxis_title='dp/dx-beta (psi/ft)')
-        fig.update_yaxes(range=[0, 1.2*max([max(c['dpdx_w'])for c in curves])]) 
+        # fig.update_layout(yaxis_title='dp/dx-beta (psi/ft)')
+        # fig.update_yaxes(range=[0, 1.2*max([max(c['dpdx_w'])for c in curves])], title='dp/dx-beta (psi/ft)') 
+        ytitle= 'dp/dx-beta (psi/ft)'
+        yrange = [0, 1.2*max([max(c['dpdx_w'])for c in curves])]
     elif graphitem == 'dp/dx_wi':
-        fig.update_layout(yaxis_title='dp/dx-washpipe id (psi/ft)')
-        fig.update_yaxes(range=[0, 1.2*max([max(c['dpdx_wi'])for c in curves])])
+        # fig.update_layout(yaxis_title='dp/dx-washpipe id (psi/ft)')
+        # fig.update_yaxes(range=[0, 1.2*max([max(c['dpdx_wi'])for c in curves])],title='dp/dx-washpipe id (psi/ft)')
+        ytitle= 'dp/dx-washpipe id (psi/ft)'
+        yrange = [0, 1.2*max([max(c['dpdx_wi'])for c in curves])]
     else:
-        fig.update_yaxes(range=[0.3*min([c['oh'] for c in curves]), max([c['oh'] for c in curves])])
+        # fig.update_yaxes(range=[0.3*min([c['oh'] for c in curves]), max([c['oh'] for c in curves])], title='Bed Height (inches)')
+        ytitle= 'Bed Height (inches)'
+        yrange = [0.3*min([c['oh'] for c in curves]), max([c['oh'] for c in curves])]
+
+    fig.update_layout(title=Fig_title,
+                      plot_bgcolor='white',
+                      yaxis=dict(range=yrange, 
+                                 title=ytitle, title_font=dict(size=20), tickfont=dict(size=16), mirror=True,
+                                 showgrid=True, gridcolor='lightgrey', zeroline=True, zerolinecolor='lightgrey'),
+                      xaxis=dict(range=[0, 1.2 * max([c['qmax'] for c in curves])],
+                                 title=x_axis_title, title_font=dict(size=20), tickfont=dict(size=16), mirror=True,
+                                 showgrid=True, gridcolor='lightgrey', zeroline=True, zerolinecolor='lightgrey'),
+                      legend=dict(font=dict(size=20)),
+                      xaxis_linecolor='black',
+                      yaxis_linecolor='black',
+                      width=800, height=600)
+
 
     return dcc.Graph(figure=fig),html.Table([row for row in tablerows]), options 
 
 
 if __name__ == "__main__":
-    app.run(debug=False, port=8050)
+    app.run(debug=True, port=8050)
 
 
