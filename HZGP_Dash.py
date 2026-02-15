@@ -473,6 +473,6 @@ def update_outputbox(curves, graphitem, unititem):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8050)
+    app.run()
 
 

@@ -1,4 +1,3 @@
-{% include syntax.html type="basic-sub" syntax-id="unordered-lists" %}
 # HZGP
 Horizontal gravel pack calculation of alpha wave height and minimum transport slurry rate.
 
